@@ -17,6 +17,11 @@ scp -P 2222 blukat@pwnable.kr:~/blukat .
 Apparently, there is no use of these buffer overflow! all return address are assign to lower address on the stack than the `buf` so it can't override them!.
 Also, trying:
 ```
+blukat@ubuntu:~$ mkdir /tmp/dafna
+blukat@ubuntu:~$ vim /tmp/dafna/sc
+blukat@ubuntu:~$ cat /tmp/dafna/sc
+import sys
+print('\x00'*int(sys.argv[1]))
 blukat@ubuntu:~$ for i in $(seq 100 500); do echo $i; python /tmp/dafna/sc $i| ./blukat; done
 ```
 didn't seg fault !
