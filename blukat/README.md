@@ -1,4 +1,4 @@
-### blucat 
+### blukat 
 googling `bluecat vulnerability` this task seems to be inspired by [CVE-2007-4390](https://www.cvedetails.com/cve/CVE-2007-4390/)
 Looking at the code, There is a buffer overflow when reading user input:
 ```
