@@ -6,7 +6,6 @@
 #include <sys/prctl.h>
 #include <fcntl.h>
 #include <unistd.h>
-//#include <seccomp.h>
 
 #define LENGTH 128
 
@@ -35,8 +34,8 @@ char stub[] = "\x48\x31\xc0\x48\x31\xdb\x48\x31\xc9\x48\x31\xd2\x48\x31\xf6\x48\
 unsigned char filter[256];
 int main(int argc, char* argv[]){
 
-  setvbuf(stdout, 0, _IONBF, 0);
-  //setvbuf(stdin, 0, _IOLBF, 0);
+	setvbuf(stdout, 0, _IONBF, 0);
+	setvbuf(stdin, 0, _IOLBF, 0);
 
 	printf("Welcome to shellcoding practice challenge.\n");
 	printf("In this challenge, you can run your x64 shellcode under SECCOMP sandbox.\n");
@@ -46,17 +45,15 @@ int main(int argc, char* argv[]){
 	char* sh = (char*)mmap(0x41414000, 0x1000, 7, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, 0, 0);
 	memset(sh, 0x90, 0x1000);
 	memcpy(sh, stub, strlen(stub));
-
+	
 	int offset = sizeof(stub);
-	printf("give me your x64 shellcode: dfsf");
-#define SZ 1500
-	read(0, sh+offset, SZ);
-    write(1,sh+offset,SZ);
+	printf("give me your x64 shellcode: ");
+	read(0, sh+offset, 1000);
 
-
-	//alarm(10);
-	//chroot("/home/asm_pwn");	// you are in chroot jail. so you can't use symlink in /tmp
+	alarm(10);
+	chroot("/home/asm_pwn");	// you are in chroot jail. so you can't use symlink in /tmp
 	sandbox();
 	((void (*)(void))sh)();
 	return 0;
 }
+

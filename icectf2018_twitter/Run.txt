@@ -1,0 +1,48 @@
+======
+Run
+======
+Run(char*) - gets it's input from the $rdi register, which points to the name of the ROM file
+
+-----------------------------------
+$rbp-0x18f0     | --> ($rbp+0x10c0) --> NcursesScreen::SetPixel(int,
+-----------------------------------
+$rbp-0x18e8     | --> ($rbp+0x1070) --> NcursesKeyboard::Read()
+-----------------------------------
+$rbp-0x18e0 - $rbp-0x18d0     | memset to 0
+-----------------------------------
+$rbp-0x18d0 - $rbp-0x8d0   | memset to 0 | then $rbp-0x18d0 to $rbp-0x1890 is filled with the values of CHIP8_FONTSET, which is in the .data section:
+-----------------------------------
+$rbp-0x8d0    | 0x0 as short
+$rbp-0x8ce    | 0x200 as short
+$rbp-0x8cc   | 0x0 as byte
+$rbp-0x8cb   | 0x0 as byte
+----------------------------
+$rbp+0x1046 - $rbp+0x1066 | memset to 0
+----------------------------
+$rbp-0x8aa | 0x0 as short
+---------------------------
+$rbp-0x8a8
+---------------------------
+$rbp-0x8a0 this is input to _ZN15NcursesKeyboardC2Ev
+.
+.
+---------------------------
+$rbp-0x850 ($rax, $rdi) this is the input to the function _ZN13NcursesScreenC2Ev
+---------------------------
+.
+.
+----------------------------------
+$rbp-0x40     | input to std::__cxx11::basic_string<char, std::char_traits<char>,std::allocator<char> - this will point to the name of the ROM file
+-----------------------------------
+.
+.
+.
+----------------------------------
+$rbp-0x11     | input to _ZNSaIcEC1Ev@plt which is std::allocator<char>::allocator()@plt()
+-----------------------------------
+$rbp-0x8      | $rbx -> main
+----------------------------------
+$rbp        | 0x7fffffffdbe0
+-------------------------------------
+
+

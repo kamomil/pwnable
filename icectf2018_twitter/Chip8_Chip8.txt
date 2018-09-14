@@ -1,0 +1,47 @@
+====
+Chip8::Chip8
+====
+rpb-40(=0x28) | --> ($rbp+0x1070) --> NcursesKeyboard::Read() ($rdx)
+rpb-32(=0x20) | --> ($rbp+0x10c0) --> NcursesScreen::SetPixel ($rsi)($rdx)
+rpb-24(=0x18) | --> ($rbp+0x20) --> ($rbp-0x10c0) --> NcursesScreen::SetPixel ($rdi)($rax)
+-----------------------------------
+rpb-16        | 
+-----------------------------------
+rpb-8         |
+-----------------------------------
+$rbp          |0x00007fffffffc2d0
+-----------------------------------
+$rbp+8        |
+-----------------------------------
+$rbp+16       |
+-----------------------------------
+$rbp+24       |
+-----------------------------------
+$rbp+0x20     | --> ($rbp+0x10c0) --> NcursesScreen::SetPixel(int,
+-----------------------------------
+$rbp+0x28     | --> ($rbp+0x1070) --> NcursesKeyboard::Read()
+-----------------------------------
+$rbp+0x30 - $rbp+0x40     | memset to 0
+-----------------------------------
+$rbp+0x40 - $rbp+0x1040   | memset to 0 | then $rbp+0x40-$rbp+0x80 is filled with the values of CHIP8_FONTSET, which is in the .data section:
+gef➤  telescop $rbp+0x40 l30
+0x00007fffffffc310│+0x00: 0x206020f0909090f0
+0x00007fffffffc318│+0x08: 0xf0f080f010f07020
+0x00007fffffffc320│+0x10: 0x10f09090f010f010
+0x00007fffffffc328│+0x18: 0x80f0f010f080f010
+0x00007fffffffc330│+0x20: 0x40402010f0f090f0
+0x00007fffffffc338│+0x28: 0xf090f0f090f090f0
+0x00007fffffffc340│+0x30: 0xe09090f090f0f010
+0x00007fffffffc348│+0x38: 0x808080f0e090e090
+0x00007fffffffc350│+0x40: 0x80f0e0909090e0f0
+0x00007fffffffc358│+0x48: 0x8080f080f0f080f0
+-----------------------------------
+$rbp+0x1040   | 0x0 as short
+$rbp+0x1042   | 0x200 as short
+$rbp+0x1044   | 0x0 as byte
+$rbp+0x1045   | 0x0 as byte
+----------------------------
+$rbp+0x1046 - $rbp+0x1066 | memset to 0
+----------------------------
+$rbp+0x1066 | 0x0 as short
+
