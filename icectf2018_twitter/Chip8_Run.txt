@@ -1,0 +1,129 @@
+=========
+Chip8::Run
+=========
+(NowInMs returns the number of milisec since apoch (1970) - the return is in $rax)
+Similar to Chip8::Chip8 function - the struct is in $rbp+0x20
+
+```
+//this does $eax/$ecx = (time measure)/MS_PER_TIMER_TICK = number of ticks measured. Thre result is stored in $eax
+
+   0x55555555627a <_ZN5Chip83RunEv+50>:	mov    eax,DWORD PTR [rbp-0x18]
+=> 0x55555555627d <_ZN5Chip83RunEv+53>:	sub    eax,DWORD PTR [rbp-0x4]
+   0x555555556280 <_ZN5Chip83RunEv+56>:	mov    edx,DWORD PTR [rip+0x202f2a]        # 0x5555557591b0 <_ZL17MS_PER_TIMER_TICK>//=0x10
+   0x555555556286 <_ZN5Chip83RunEv+62>:	mov    ecx,edx
+   0x555555556288 <_ZN5Chip83RunEv+64>:	mov    edx,0x0
+   0x55555555628d <_ZN5Chip83RunEv+69>:	div    ecx
+
+```
+It then calls Chip8::Tick60Hz() which I didnt bother to understand what it does.
+Then there is the code:
+```
+=> 0x5555555562ad <_ZN5Chip83RunEv+101>:	mov    rax,QWORD PTR [rbp-0x28]
+   0x5555555562b1 <_ZN5Chip83RunEv+105>:	mov    rax,QWORD PTR [rax+0x8]
+   0x5555555562b5 <_ZN5Chip83RunEv+109>:	mov    rax,QWORD PTR [rax]
+//at this point $rax holds an adress in .data.rel.ro
+//gef➤  telescope $rax
+//0x0000555555758c98│+0x00: 0x0000555555555d96  →  <NcursesKeyboard::Read()+0> push rbp	 ← $rax
+
+   0x5555555562b8 <_ZN5Chip83RunEv+112>:	add    rax,0x18
+//now it holds adderss in .data.rel.ro: 0x0000555555555e8a  →  <NcursesKeyboard::Tick60Hz()+0> push rbp	
+   0x5555555562bc <_ZN5Chip83RunEv+116>:	mov    rax,QWORD PTR [rax]
+   0x5555555562bf <_ZN5Chip83RunEv+119>:	mov    rdx,QWORD PTR [rbp-0x28]
+   0x5555555562c3 <_ZN5Chip83RunEv+123>:	mov    rdx,QWORD PTR [rdx+0x8]
+   0x5555555562c7 <_ZN5Chip83RunEv+127>:	mov    rdi,rdx
+   0x5555555562ca <_ZN5Chip83RunEv+130>:	call   rax
+
+```
+So the above code calls NcursesKeyboard::Tick60Hz() with an addres on the stack to points to NcursesKeyboard::Read() entry in
+.data.rel.ro table
+
+There is a loop running according the number of ticks measure wich is 0x0000540f (calculated from the division before).
+It executes this NcursesKeyboard::Tick60Hz(), in every iteration.
+
+Then after 0x0000540f iterations we get to the interesting part:
+
+```
+=> 0x5555555562d2 <_ZN5Chip83RunEv+138>:	mov    eax,DWORD PTR [rip+0x202ed8]        # 0x5555557591b0 <_ZL17MS_PER_TIMER_TICK>
+   0x5555555562d8 <_ZN5Chip83RunEv+144>:	imul   eax,DWORD PTR [rbp-0x1c]
+   0x5555555562dc <_ZN5Chip83RunEv+148>:	add    DWORD PTR [rbp-0x4],eax //ads to the first ms measure, the difference from the third
+//this seems like a very similar code as before but this time with the   MS_PER_CPU_TICK paramater and the measure is between the third and the second.
+//running this we get 0x30ed ticks, so I guess we have here a loop the iterates 0x30ed times and calls $rax and then Chip::Step in each iteration.
+//running the code we find that $rax is evaluated to <NcursesKeyboard::TryRead()+0>
+So this is the general code:
+while(x<0x30ed){
+	<NcursesKeyboard::TryRead()+0>
+	Chip::Step
+	x++
+}
+
+ 0x5555555562df <_ZN5Chip83RunEv+151>:	mov    eax,DWORD PTR [rbp-0x18]
+   0x5555555562e2 <_ZN5Chip83RunEv+154>:	sub    eax,DWORD PTR [rbp-0x8]
+   0x5555555562e5 <_ZN5Chip83RunEv+157>:	mov    edx,DWORD PTR [rip+0x202ec9]        # 0x5555557591b4 <_ZL15MS_PER_CPU_TICK>
+   0x5555555562eb <_ZN5Chip83RunEv+163>:	mov    esi,edx
+   0x5555555562ed <_ZN5Chip83RunEv+165>:	mov    edx,0x0
+   0x5555555562f2 <_ZN5Chip83RunEv+170>:	div    esi
+   0x5555555562f4 <_ZN5Chip83RunEv+172>:	mov    DWORD PTR [rbp-0x20],eax
+   0x5555555562f7 <_ZN5Chip83RunEv+175>:	mov    DWORD PTR [rbp-0x10],0x0
+   0x5555555562fe <_ZN5Chip83RunEv+182>:	mov    eax,DWORD PTR [rbp-0x10]
+   0x555555556301 <_ZN5Chip83RunEv+185>:	cmp    eax,DWORD PTR [rbp-0x20]
+   0x555555556304 <_ZN5Chip83RunEv+188>:	jae    0x55555555633e <_ZN5Chip83RunEv+246>
+   0x555555556306 <_ZN5Chip83RunEv+190>:	mov    rax,QWORD PTR [rbp-0x28]
+   0x55555555630a <_ZN5Chip83RunEv+194>:	mov    rax,QWORD PTR [rax+0x8]
+   0x55555555630e <_ZN5Chip83RunEv+198>:	mov    rax,QWORD PTR [rax]
+   0x555555556311 <_ZN5Chip83RunEv+201>:	add    rax,0x8
+   0x555555556315 <_ZN5Chip83RunEv+205>:	mov    rax,QWORD PTR [rax]
+   0x555555556318 <_ZN5Chip83RunEv+208>:	mov    rdx,QWORD PTR [rbp-0x28]
+   0x55555555631c <_ZN5Chip83RunEv+212>:	mov    rdx,QWORD PTR [rdx+0x8]
+   0x555555556320 <_ZN5Chip83RunEv+216>:	mov    rdi,rdx
+   0x555555556323 <_ZN5Chip83RunEv+219>:	call   rax
+   0x555555556325 <_ZN5Chip83RunEv+221>:	mov    rax,QWORD PTR [rbp-0x28]
+   0x555555556329 <_ZN5Chip83RunEv+225>:	mov    rdi,rax
+   0x55555555632c <_ZN5Chip83RunEv+228>:	call   0x555555556412 <_ZN5Chip84StepEv>
+
+```
+
+
+rpb-(=0x28) | --> $rbp+0x20
+rpb-40(=0x28) | --> $rbp+0x20
+rpb-32(=0x20) | --> 
+----------------------
+rbp-28(=0x1c) | number of allowed ticks measured, 0x0000540f, 
+---------------------------------------------------
+rpb-24(=0x18) | 4 last byte of milisec since epoch (3)
+
+-----------------------------------
+rpb-0x11      | 0x1
+-----------------------------------
+rpb-0x10      | 
+-----------------------------------
+rpb-0x8       | 4 last byte of milisec since epoch (2)
+-----------------------------------
+rpb-0x4       | 4 last byte of milisec since epoch (1)
+-----------------------------------
+$rbp          |0x00007fffffffc2d0
+-----------------------------------
+$rbp+8        |
+-----------------------------------
+$rbp+16       |
+-----------------------------------
+$rbp+24       |
+-----------------------------------
+$rbp+0x20     | --> ($rbp+0x10c0) --> NcursesScreen::SetPixel(int,
+-----------------------------------
+$rbp+0x28     | --> ($rbp+0x1070) --> NcursesKeyboard::Read()
+-----------------------------------
+$rbp+0x30 - $rbp+0x40     | memset to 0
+-----------------------------------
+$rbp+0x40 - $rbp+0x1040   | memset to 0 | then $rbp+0x40-$rbp+0x80 is filled with the values of CHIP8_FONTSET, which is in the .data section:
+and $rbp+0x240 is filled with the file content
+-----------------------------------
+$rbp+0x1040   | 0x0 as short
+$rbp+0x1042   | 0x200 as short
+$rbp+0x1044   | 0x0 as byte
+$rbp+0x1045   | 0x0 as byte
+----------------------------
+$rbp+0x1046 - $rbp+0x1066 | memset to 0
+----------------------------
+$rbp+0x1066 | 0x0 as short
+
+

@@ -1,0 +1,252 @@
+==============
+Chip8::Step()()
+==============
+This is a huge function, about  1100 lines
+
+rpb-(=0x38) | --> Chip8::Chip8
+----------------------
+rbp-28(=0x1c) | 
+---------------------------------------------------
+rpb-24(=0x18) | 
+
+-----------------------------------
+rpb-0x11      | 
+-----------------------------------
+rpb-0x10      | 
+-----------------------------------
+rpb-0x8       | 
+-----------------------------------
+rpb-0x4       | 
+-----------------------------------
+$rbp          |0x7fffffffc270
+-----------------------------------
+...
+$rbp+8        |
+-----------------------------------
+$rbp+16       |
+-----------------------------------
+$rbp+24       |
+-----------------------------------
+$rax          | --> ($rbp+0x10c0) --> NcursesScreen::SetPixel(int,
+-----------------------------------
+$rax+0x08     | --> ($rbp+0x1070) --> NcursesKeyboard::Read()
+-----------------------------------
+$rax+0x10 - $rax+0x20     | memset to 0
+-----------------------------------
+$rax+0x20 - $rax+0x1020   | memset to 0 | then $rbp+0x40-$rbp+0x80 is filled with the values of CHIP8_FONTSET, which is in the .data section:
+and $rbp+0x240 is filled with the file content
+-----------------------------------
+$rax+0x1020   | 0x0 as short
+$rax+0x1022   | 0x200 as short //pc - points to the next instruction
+$rax+0x1024   | 0x0 as byte
+$rax+0x1025   | 0x0 as byte
+----------------------------
+$rax+0x1026 - $rbp+0x1046 | memset to 0
+----------------------------
+$rax+0x1046 | 0x0 as short
+============================================
+Here is a piece of operation that the code jumped to:
+
+/////////////// 6xkk - LD Vx, byte /////////////////
+=> 0x555555556730 <_ZN5Chip84StepEv+798>:	movzx  eax,WORD PTR [rbp-0x1e]//0x6000 - this is the current instruction
+   0x555555556734 <_ZN5Chip84StepEv+802>:	sar    eax,0x8
+   0x555555556737 <_ZN5Chip84StepEv+805>:	and    eax,0xf
+   0x55555555673a <_ZN5Chip84StepEv+808>:	mov    ecx,eax                 //0x0
+   0x55555555673c <_ZN5Chip84StepEv+810>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x555555556740 <_ZN5Chip84StepEv+814>:	mov    esi,eax                  //0x6000
+   0x555555556742 <_ZN5Chip84StepEv+816>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x555555556746 <_ZN5Chip84StepEv+820>:	movsxd rax,ecx
+   0x555555556749 <_ZN5Chip84StepEv+823>:	mov    BYTE PTR [rdx+rax*1+0x10],sil //writes to the V[] array at offset taken according to the instruction
+//Now we update the pointer to the next instruction (pc) pobably - it increment it by 2
+   0x55555555674e <_ZN5Chip84StepEv+828>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555556752 <_ZN5Chip84StepEv+832>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x555555556759 <_ZN5Chip84StepEv+839>:	lea    edx,[rax+0x2]
+   0x55555555675c <_ZN5Chip84StepEv+842>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555556760 <_ZN5Chip84StepEv+846>:	mov    WORD PTR [rax+0x1022],dx
+
+//////////////8xy? //this instruction seems to handle all the 8xy? so it calls again to rax for each specific instruction
+
+=> 0x5555555567bd <_ZN5Chip84StepEv+939>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555567c1 <_ZN5Chip84StepEv+943>:	and    eax,0xf
+   0x5555555567c4 <_ZN5Chip84StepEv+946>:	cmp    eax,0xe
+   0x5555555567c7 <_ZN5Chip84StepEv+949>:	ja     0x555555556c23 <_ZN5Chip84StepEv+2065>
+   0x5555555567cd <_ZN5Chip84StepEv+955>:	mov    eax,eax
+   0x5555555567cf <_ZN5Chip84StepEv+957>:	lea    rdx,[rax*4+0x0]
+   0x5555555567d7 <_ZN5Chip84StepEv+965>:	lea    rax,[rip+0x109e]        # 0x55555555787c
+   0x5555555567de <_ZN5Chip84StepEv+972>:	mov    eax,DWORD PTR [rdx+rax*1]
+   0x5555555567e1 <_ZN5Chip84StepEv+975>:	movsxd rdx,eax
+   0x5555555567e4 <_ZN5Chip84StepEv+978>:	lea    rax,[rip+0x1091]        # 0x55555555787c
+   0x5555555567eb <_ZN5Chip84StepEv+985>:	add    rax,rdx
+   0x5555555567ee <_ZN5Chip84StepEv+988>:	jmp    rax 
+   0x5555555567f0 <_ZN5Chip84StepEv+990>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555567f4 <_ZN5Chip84StepEv+994>:	sar    eax,0x8
+   0x5555555567f7 <_ZN5Chip84StepEv+997>:	and    eax,0xf
+   0x5555555567fa <_ZN5Chip84StepEv+1000>:	mov    esi,eax
+   0x5555555567fc <_ZN5Chip84StepEv+1002>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x555555556800 <_ZN5Chip84StepEv+1006>:	sar    eax,0x4
+   0x555555556803 <_ZN5Chip84StepEv+1009>:	and    eax,0xf
+   0x555555556806 <_ZN5Chip84StepEv+1012>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x55555555680a <_ZN5Chip84StepEv+1016>:	cdqe   
+   0x55555555680c <_ZN5Chip84StepEv+1018>:	movzx  ecx,BYTE PTR [rdx+rax*1+0x10]
+   0x555555556811 <_ZN5Chip84StepEv+1023>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x555555556815 <_ZN5Chip84StepEv+1027>:	movsxd rax,esi
+   0x555555556818 <_ZN5Chip84StepEv+1030>:	mov    BYTE PTR [rdx+rax*1+0x10],cl
+   0x55555555681c <_ZN5Chip84StepEv+1034>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555556820 <_ZN5Chip84StepEv+1038>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x555555556827 <_ZN5Chip84StepEv+1045>:	lea    edx,[rax+0x2]
+   0x55555555682a <_ZN5Chip84StepEv+1048>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555682e <_ZN5Chip84StepEv+1052>:	mov    WORD PTR [rax+0x1022],dx
+
+//////////////8xy2
+=> 0x55555555689c <_ZN5Chip84StepEv+1162>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555568a0 <_ZN5Chip84StepEv+1166>:	sar    eax,0x8
+   0x5555555568a3 <_ZN5Chip84StepEv+1169>:	and    eax,0xf
+   0x5555555568a6 <_ZN5Chip84StepEv+1172>:	mov    esi,eax
+   0x5555555568a8 <_ZN5Chip84StepEv+1174>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555568ac <_ZN5Chip84StepEv+1178>:	sar    eax,0x8
+   0x5555555568af <_ZN5Chip84StepEv+1181>:	and    eax,0xf
+   0x5555555568b2 <_ZN5Chip84StepEv+1184>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x5555555568b6 <_ZN5Chip84StepEv+1188>:	cdqe   
+   0x5555555568b8 <_ZN5Chip84StepEv+1190>:	movzx  ecx,BYTE PTR [rdx+rax*1+0x10]
+   0x5555555568bd <_ZN5Chip84StepEv+1195>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555568c1 <_ZN5Chip84StepEv+1199>:	sar    eax,0x4
+   0x5555555568c4 <_ZN5Chip84StepEv+1202>:	and    eax,0xf
+   0x5555555568c7 <_ZN5Chip84StepEv+1205>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x5555555568cb <_ZN5Chip84StepEv+1209>:	cdqe   
+   0x5555555568cd <_ZN5Chip84StepEv+1211>:	movzx  eax,BYTE PTR [rdx+rax*1+0x10]
+   0x5555555568d2 <_ZN5Chip84StepEv+1216>:	and    ecx,eax
+   0x5555555568d4 <_ZN5Chip84StepEv+1218>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x5555555568d8 <_ZN5Chip84StepEv+1222>:	movsxd rax,esi
+   0x5555555568db <_ZN5Chip84StepEv+1225>:	mov    BYTE PTR [rdx+rax*1+0x10],cl
+   0x5555555568df <_ZN5Chip84StepEv+1229>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x5555555568e3 <_ZN5Chip84StepEv+1233>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x5555555568ea <_ZN5Chip84StepEv+1240>:	lea    edx,[rax+0x2]
+   0x5555555568ed <_ZN5Chip84StepEv+1243>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x5555555568f1 <_ZN5Chip84StepEv+1247>:	mov    WORD PTR [rax+0x1022],dx
+
+///////////////3xkk - SE Vx, byte - Skip next instruction if Vx = kk.
+=> 0x555555556608 <_ZN5Chip84StepEv+502>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x55555555660c <_ZN5Chip84StepEv+506>:	sar    eax,0x8
+   0x55555555660f <_ZN5Chip84StepEv+509>:	and    eax,0xf
+   0x555555556612 <_ZN5Chip84StepEv+512>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x555555556616 <_ZN5Chip84StepEv+516>:	cdqe   
+   0x555555556618 <_ZN5Chip84StepEv+518>:	movzx  eax,BYTE PTR [rdx+rax*1+0x10]
+   0x55555555661d <_ZN5Chip84StepEv+523>:	movzx  edx,al
+   0x555555556620 <_ZN5Chip84StepEv+526>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x555555556624 <_ZN5Chip84StepEv+530>:	movzx  eax,al
+   0x555555556627 <_ZN5Chip84StepEv+533>:	cmp    edx,eax
+   0x555555556629 <_ZN5Chip84StepEv+535>:	jne    0x555555556649 <_ZN5Chip84StepEv+567>
+   0x55555555662b <_ZN5Chip84StepEv+537>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555662f <_ZN5Chip84StepEv+541>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x555555556636 <_ZN5Chip84StepEv+548>:	lea    edx,[rax+0x4]
+   0x555555556639 <_ZN5Chip84StepEv+551>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555663d <_ZN5Chip84StepEv+555>:	mov    WORD PTR [rax+0x1022],dx //this increments the pc by 4 to skip next instruction
+
+//////////////////0xfx??- this code is for all instructions starting with f, it then jump according to the lsb
+
+=> 0x555555557069 <_ZN5Chip84StepEv+3159>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x55555555706d <_ZN5Chip84StepEv+3163>:	movzx  eax,al
+   0x555555557070 <_ZN5Chip84StepEv+3166>:	cmp    eax,0x1e
+   0x555555557073 <_ZN5Chip84StepEv+3169>:	je     0x555555557203 <_ZN5Chip84StepEv+3569>
+   0x555555557079 <_ZN5Chip84StepEv+3175>:	cmp    eax,0x1e
+   0x55555555707c <_ZN5Chip84StepEv+3178>:	jg     0x5555555570ad <_ZN5Chip84StepEv+3227>
+   0x55555555707e <_ZN5Chip84StepEv+3180>:	cmp    eax,0xa
+   0x555555557081 <_ZN5Chip84StepEv+3183>:	je     0x555555557120 <_ZN5Chip84StepEv+3342>
+   0x555555557087 <_ZN5Chip84StepEv+3189>:	cmp    eax,0xa
+   0x55555555708a <_ZN5Chip84StepEv+3192>:	jg     0x555555557096 <_ZN5Chip84StepEv+3204>
+   0x55555555708c <_ZN5Chip84StepEv+3194>:	cmp    eax,0x7
+   0x55555555708f <_ZN5Chip84StepEv+3197>:	je     0x5555555570e0 <_ZN5Chip84StepEv+3278>
+   0x555555557091 <_ZN5Chip84StepEv+3199>:	jmp    0x5555555574f0 <_ZN5Chip84StepEv+4318>
+   0x555555557096 <_ZN5Chip84StepEv+3204>:	cmp    eax,0x15
+   0x555555557099 <_ZN5Chip84StepEv+3207>:	je     0x555555557189 <_ZN5Chip84StepEv+3447>
+   0x55555555709f <_ZN5Chip84StepEv+3213>:	cmp    eax,0x18
+   0x5555555570a2 <_ZN5Chip84StepEv+3216>:	je     0x5555555571c6 <_ZN5Chip84StepEv+3508>
+   0x5555555570a8 <_ZN5Chip84StepEv+3222>:	jmp    0x5555555574f0 <_ZN5Chip84StepEv+4318>
+   0x5555555570ad <_ZN5Chip84StepEv+3227>:	cmp    eax,0x33
+   0x5555555570b0 <_ZN5Chip84StepEv+3230>:	je     0x5555555572c6 <_ZN5Chip84StepEv+3764>
+   0x5555555570b6 <_ZN5Chip84StepEv+3236>:	cmp    eax,0x33
+   0x5555555570b9 <_ZN5Chip84StepEv+3239>:	jg     0x5555555570c9 <_ZN5Chip84StepEv+3255>
+   0x5555555570bb <_ZN5Chip84StepEv+3241>:	cmp    eax,0x29
+   0x5555555570be <_ZN5Chip84StepEv+3244>:	je     0x555555557279 <_ZN5Chip84StepEv+3687>
+   0x5555555570c4 <_ZN5Chip84StepEv+3250>:	jmp    0x5555555574f0 <_ZN5Chip84StepEv+4318>
+   0x5555555570c9 <_ZN5Chip84StepEv+3255>:	cmp    eax,0x55
+   0x5555555570cc <_ZN5Chip84StepEv+3258>:	je     0x55555555741c <_ZN5Chip84StepEv+4106>
+   0x5555555570d2 <_ZN5Chip84StepEv+3264>:	cmp    eax,0x65
+   0x5555555570d5 <_ZN5Chip84StepEv+3267>:	je     0x555555557487 <_ZN5Chip84StepEv+4213>
+   0x5555555570db <_ZN5Chip84StepEv+3273>:	jmp    0x5555555574f0 <_ZN5Chip84StepEv+4318>
+   0x5555555570e0 <_ZN5Chip84StepEv+3278>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x5555555570e4 <_ZN5Chip84StepEv+3282>:	sar    eax,0x8
+   0x5555555570e7 <_ZN5Chip84StepEv+3285>:	and    eax,0xf
+   0x5555555570ea <_ZN5Chip84StepEv+3288>:	mov    esi,eax
+   0x5555555570ec <_ZN5Chip84StepEv+3290>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x5555555570f0 <_ZN5Chip84StepEv+3294>:	movzx  ecx,BYTE PTR [rax+0x1024]
+   0x5555555570f7 <_ZN5Chip84StepEv+3301>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x5555555570fb <_ZN5Chip84StepEv+3305>:	movsxd rax,esi
+   0x5555555570fe <_ZN5Chip84StepEv+3308>:	mov    BYTE PTR [rdx+rax*1+0x10],cl
+   0x555555557102 <_ZN5Chip84StepEv+3312>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555557106 <_ZN5Chip84StepEv+3316>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x55555555710d <_ZN5Chip84StepEv+3323>:	lea    edx,[rax+0x2]
+   0x555555557110 <_ZN5Chip84StepEv+3326>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555557114 <_ZN5Chip84StepEv+3330>:	mov    WORD PTR [rax+0x1022],dx
+   0x55555555711b <_ZN5Chip84StepEv+3337>:	jmp    0x5555555574f7 <_ZN5Chip84StepEv+4325>
+
+
+////////////////////Fx1E - ADD I, Vx, Set I = I + Vx.
+=> 0x555555557203 <_ZN5Chip84StepEv+3569>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555557207 <_ZN5Chip84StepEv+3573>:	movzx  ecx,WORD PTR [rax+0x1020]
+   0x55555555720e <_ZN5Chip84StepEv+3580>:	movzx  eax,WORD PTR [rbp-0x1e]
+   0x555555557212 <_ZN5Chip84StepEv+3584>:	sar    eax,0x8
+   0x555555557215 <_ZN5Chip84StepEv+3587>:	and    eax,0xf
+   0x555555557218 <_ZN5Chip84StepEv+3590>:	mov    rdx,QWORD PTR [rbp-0x38]
+   0x55555555721c <_ZN5Chip84StepEv+3594>:	cdqe   
+   0x55555555721e <_ZN5Chip84StepEv+3596>:	movzx  eax,BYTE PTR [rdx+rax*1+0x10]
+   0x555555557223 <_ZN5Chip84StepEv+3601>:	movzx  eax,al
+   0x555555557226 <_ZN5Chip84StepEv+3604>:	lea    edx,[rcx+rax*1]         //this is the actual addition of I+Vx
+   0x555555557229 <_ZN5Chip84StepEv+3607>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555722d <_ZN5Chip84StepEv+3611>:	mov    WORD PTR [rax+0x1020],dx //here the result is put in I
+
+//interestingly, there is a kind of indication that I is more than 12 bits
+// if it is (i.e I>0xfff) then V15 is set to 1 to indicate that,
+   0x555555557234 <_ZN5Chip84StepEv+3618>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555557238 <_ZN5Chip84StepEv+3622>:	movzx  eax,WORD PTR [rax+0x1020]
+   0x55555555723f <_ZN5Chip84StepEv+3629>:	movzx  eax,ax
+   0x555555557242 <_ZN5Chip84StepEv+3632>:	cmp    eax,0xfff
+   0x555555557247 <_ZN5Chip84StepEv+3637>:	jle    0x555555557253 <_ZN5Chip84StepEv+3649>
+
+   0x555555557249 <_ZN5Chip84StepEv+3639>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555724d <_ZN5Chip84StepEv+3643>:	mov    BYTE PTR [rax+0x1f],0x1
+   0x555555557251 <_ZN5Chip84StepEv+3647>:	jmp    0x55555555725b <_ZN5Chip84StepEv+3657>
+   0x555555557253 <_ZN5Chip84StepEv+3649>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x555555557257 <_ZN5Chip84StepEv+3653>:	mov    BYTE PTR [rax+0x1f],0x0
+   0x55555555725b <_ZN5Chip84StepEv+3657>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555725f <_ZN5Chip84StepEv+3661>:	movzx  eax,WORD PTR [rax+0x1022]
+   0x555555557266 <_ZN5Chip84StepEv+3668>:	lea    edx,[rax+0x2]
+   0x555555557269 <_ZN5Chip84StepEv+3671>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x55555555726d <_ZN5Chip84StepEv+3675>:	mov    WORD PTR [rax+0x1022],dx
+   0x555555557274 <_ZN5Chip84StepEv+3682>:	jmp    0x5555555574f7 <_ZN5Chip84StepEv+4325>
+
+The other commands that interest us:
+
+Annn - LD I, addr
+Set I = nnn.
+
+The value of register I is set to nnn.
+
+Fx55 - LD [I], Vx
+Store registers V0 through Vx in memory starting at location I.
+
+The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I.
+
+
+Fx65 - LD Vx, [I]
+Read registers V0 through Vx from memory starting at location I.
+
+The interpreter reads values from memory starting at location I into registers V0 through Vx.
+
+
+
+
+
+
+
+

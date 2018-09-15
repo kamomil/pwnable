@@ -93,8 +93,8 @@ $rbp+24       |
 	uint8_t mem[0x1000]; // 0x20 //first 0x4f bytes are memcopied from CHIP8_FONTSET in the .data sect
 	uint16_t I; // 0x1020
 	uint16_t pc; // 0x1022
-	uint8_t unknown1; // 0x1024
-	uint8_t unknown2; // 0x1025
+	uint8_t unknown1; // 0x1024 //related to the Chip8::Tick60Hz
+	uint8_t unknown2; // 0x1025 //related to the Chip8::Tick60Hz
 	uint8_t unknown3[0x20]; // 0x1026
 	uint16_t unknown3;
 } __attribute__((packed));
